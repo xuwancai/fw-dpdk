@@ -84,6 +84,7 @@
 #include "eal_hugepages.h"
 #include "eal_options.h"
 #include "eal_vfio.h"
+#include "eal_prase.h"
 
 #define MEMSIZE_IF_NO_HUGE_PAGE (64ULL * 1024ULL * 1024ULL)
 
@@ -892,6 +893,108 @@ rte_eal_init(int argc, char **argv)
 	return fctret;
 }
 
+/* Launch threads, called at application init(). */
+int
+rte_eal_init_custom(int argc, char **argv)
+{
+	int ret;
+	static rte_atomic32_t run_once = RTE_ATOMIC32_INIT(0);
+	char cpuset[RTE_CPU_AFFINITY_STR_LEN];
+
+	/* checks if the machine is adequate */
+	rte_cpu_check_supported();
+
+	if (!rte_atomic32_test_and_set(&run_once))
+		return -1;
+
+/* DPDK的初始化参数:
+	部分参数通过调用eal_init_internal_config接口直接配置为默认参数;
+    部分参数通过rte_eal_prase_config_file配置文件解析获取; */
+	eal_init_internal_config(&internal_config);	
+
+	/* set log level as early as possible */
+	/* 调试使用，暂且不删除 */
+	rte_set_log_level(internal_config.log_level);
+
+	/* cpu信息的检测，解析配置文件使用此信息 */
+	if (rte_eal_cpu_init() < 0)
+		rte_panic("Cannot detect lcores\n");
+	
+    /* 增加解析配置文件的函数 */
+	if (rte_eal_prase_config_file() < 0)
+		rte_panic("Cannot prase config file\n");
+
+    /* hugepage内存的映射，简化版，不在判断是否支为xem、nohuge等 */
+	if (eal_hugepage_info_init() < 0)
+		rte_panic("Cannot get hugepage information\n");
+
+	rte_srand(rte_rdtsc());
+
+	rte_config_init();
+
+	if (rte_eal_log_init("DPDK-Test", internal_config.syslog_facility) < 0)
+		rte_panic("Cannot init logs\n");
+
+	if (rte_eal_pci_init() < 0)
+		rte_panic("Cannot init PCI\n");
+
+#if 0
+#ifdef VFIO_PRESENT
+	if (rte_eal_vfio_setup() < 0)
+		rte_panic("Cannot init VFIO\n");
+#endif
+#endif
+
+	if (rte_eal_memory_init() < 0)
+		rte_panic("Cannot init memory\n");
+
+	/* the directories are locked during eal_hugepage_info_init */
+	eal_hugedirs_unlock();
+
+	if (rte_eal_memzone_init() < 0)
+		rte_panic("Cannot init memzone\n");
+
+	if (rte_eal_tailqs_init() < 0)
+		rte_panic("Cannot init tail queues for objects\n");
+
+#if 0
+	if (rte_eal_alarm_init() < 0)
+		rte_panic("Cannot init interrupt-handling thread\n");
+#endif
+
+    /* 某些驱动使用，暂且先打开 */
+	if (rte_eal_timer_init() < 0)
+		rte_panic("Cannot init HPET or TSC timers\n");
+
+	eal_check_mem_on_local_socket();
+
+	/* dlopen so，暂且先打开 */
+	if (eal_plugins_init() < 0)
+		rte_panic("Cannot init plugins\n");
+#if 0
+	eal_thread_init_master(rte_config.master_lcore);
+	ret = eal_thread_dump_affinity(cpuset, RTE_CPU_AFFINITY_STR_LEN);
+
+	RTE_LOG(DEBUG, EAL, "Master lcore %u is ready (tid=%x;cpuset=[%s%s])\n",
+		rte_config.master_lcore, (int)thread_id, cpuset,
+		ret == 0 ? "" : "...");
+#endif
+
+	if (rte_eal_dev_init() < 0)
+		rte_panic("Cannot init pmd devices\n");
+
+	/* 处理中断进程的代码，后续需要适配多进程环境，要重新设计 */
+	if (rte_eal_intr_init() < 0)
+		rte_panic("Cannot init interrupt-handling thread\n");
+
+	/* Probe & Initialize PCI devices */
+	if (rte_eal_pci_probe())
+		rte_panic("Cannot probe PCI\n");
+
+	rte_eal_mcfg_complete();
+
+	return 0;
+}
 /* get core role */
 enum rte_lcore_role_t
 rte_eal_lcore_role(unsigned lcore_id)

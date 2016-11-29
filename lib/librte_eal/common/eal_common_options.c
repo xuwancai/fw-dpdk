@@ -168,6 +168,55 @@ eal_reset_internal_config(struct internal_config *internal_cfg)
 	internal_cfg->create_uio_dev = 0;
 }
 
+/* 调用此接口，配置系统的默认的参数，
+DPDK的初始化参数:
+  一部分参数通过调用此接口直接配置为默认参数。
+  一部分参数通过配置文件解析获取 */
+void
+eal_init_internal_config(struct internal_config *internal_cfg)
+{
+	int i;
+	internal_cfg->no_shconf = 0;
+	internal_cfg->memory = 0;
+	internal_cfg->force_nrank = 0;
+	internal_cfg->force_nchannel = 0;
+	internal_cfg->hugefile_prefix = HUGEFILE_PREFIX_DEFAULT;
+	internal_cfg->hugepage_dir = NULL;
+	internal_cfg->force_sockets = 0;
+	internal_cfg->process_type = RTE_PROC_PRIMARY;
+	
+	/* zero out the NUMA config */
+	for (i = 0; i < RTE_MAX_NUMA_NODES; i++)
+		internal_cfg->socket_mem[i] = 0;
+	
+	/* zero out hugedir descriptors */
+	for (i = 0; i < MAX_HUGEPAGE_SIZES; i++)
+		internal_cfg->hugepage_info[i].lock_descriptor = -1;
+	internal_cfg->base_virtaddr = 0;
+
+	internal_cfg->syslog_facility = LOG_DAEMON;
+	/* default value from build option */
+#if RTE_LOG_LEVEL >= RTE_LOG_DEBUG
+	internal_cfg->log_level = RTE_LOG_DEBUG;
+#else
+	internal_cfg->log_level = RTE_LOG_DEBUG;
+#endif
+
+	internal_cfg->xen_dom0_support = 0;
+
+	/* if set to NONE, interrupt mode is determined automatically */
+	internal_cfg->vfio_intr_mode = RTE_INTR_MODE_NONE;
+
+#ifdef RTE_LIBEAL_USE_HPET
+	internal_cfg->no_hpet = 0;
+#else
+	internal_cfg->no_hpet = 1;
+#endif
+
+	internal_cfg->vmware_tsc_map = 0;
+	internal_cfg->create_uio_dev = 0;
+}
+
 static int
 eal_plugin_add(const char *path)
 {

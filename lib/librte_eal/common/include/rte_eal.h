@@ -157,6 +157,7 @@ int rte_eal_iopl_init(void);
  *   - On failure, a negative error value.
  */
 int rte_eal_init(int argc, char **argv);
+int rte_eal_init_custom(int argc, char **argv);
 
 /**
  * Check if a primary process is currently alive

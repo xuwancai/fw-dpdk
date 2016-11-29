@@ -91,10 +91,12 @@ SRCS-$(CONFIG_RTE_EXEC_ENV_LINUXAPP) += eal_common_dev.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUXAPP) += eal_common_options.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUXAPP) += eal_common_thread.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUXAPP) += eal_common_proc.c
+SRCS-$(CONFIG_RTE_EXEC_ENV_LINUXAPP) += eal_common_prase.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUXAPP) += rte_malloc.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUXAPP) += malloc_elem.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUXAPP) += malloc_heap.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUXAPP) += rte_keepalive.c
+
 
 # from arch dir
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUXAPP) += rte_cpuflags.c
