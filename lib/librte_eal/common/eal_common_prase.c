@@ -50,11 +50,12 @@
 #include <rte_version.h>
 #include <rte_devargs.h>
 #include <rte_memcpy.h>
+#include <rte_prase.h>
 
 #include "eal_internal_cfg.h"
 #include "eal_options.h"
 #include "eal_filesystem.h"
-#include "eal_prase.h"
+
 
 struct rte_prase_config rte_prase_config;
 
@@ -64,8 +65,16 @@ struct rte_prase_config rte_prase_config;
 #define CONFIG_COUNT_SPLIT    "COUNT"
 
 #define CONFIG_DISPATCHER     "Dispatcher"
-#define CONFIG_PHYSICAL_NIC   "Physical nic"
-#define CONFIG_APP_MAIN       "App_Main"
+#define CONFIG_PHY_PORT       "PhysicalPort"
+#define CONFIG_APP_MAIN       "AppMain"
+
+/* Return a pointer to the prase configuration structure */
+struct rte_prase_config *
+rte_eal_get_prase_config(void)
+{
+	return &rte_prase_config;
+}
+
 
 static uint8_t
 rte_prase_strsplit(char* buf, char split, uint8_t* store)
@@ -90,9 +99,9 @@ rte_prase_strsplit(char* buf, char split, uint8_t* store)
 static int
 rte_eal_prase_dispatch(FILE *f, char* root) 
 {
-    #define DISPATCHER_INDEX "Dispatcher index"
-    #define DISPATCHER_CORE "Dispatcher affinity core"
-    #define DISPATCHER_PORT "Dispatcher physical port"
+    #define DISPATCHER_ID 			"DispatcherID"
+    #define DISPATCHER_AFF_CORE 	"DispatcherAffinityCore"
+    #define DISPATCHER_PHY_PORT 	"DispatcherPhysicalPort"
     
     char *data;
     char *end;
@@ -120,6 +129,11 @@ rte_eal_prase_dispatch(FILE *f, char* root)
 	    while(isspace(buf_ptr))
 			++buf_ptr;
 
+		/* 必须保证每个配置项都有换行 */
+		if (*buf = '\r' || *buf = '\n')
+			break;
+		
+
         /* 忽略注释 */  
 		if (*buf_ptr == '#')
 			continue;
@@ -131,7 +145,7 @@ rte_eal_prase_dispatch(FILE *f, char* root)
 		}
 		while(isspace(++data));
 
-	    if (strstr(buf_ptr, DISPATCHER_INDEX)) {
+	    if (strstr(buf_ptr, DISPATCHER_ID)) {
 		    index = strtoul(data, NULL, 0);
 		    if (index > rte_prase_config.rte_dispatcher_count) {
 		    	RTE_LOG(ERR, EAL, "%s(): parse dispatch index %d\n",
@@ -142,12 +156,12 @@ rte_eal_prase_dispatch(FILE *f, char* root)
 		    continue;
 	    }
 
-	    if (strstr(buf_ptr, DISPATCHER_CORE)) {
+	    if (strstr(buf_ptr, DISPATCHER_AFF_CORE)) {
 		    dispatcher_conf->affinity_core = strtoul(data, NULL, 0);
 		    continue;
 	    }
 
-	    if (strstr(buf_ptr, DISPATCHER_PORT)) {
+	    if (strstr(buf_ptr, DISPATCHER_PHY_PORT)) {
 		    dispatcher_conf->phy_port_count = rte_prase_strsplit(data, ',', dispatcher_conf->phy_port);
 		    continue;
 	    }
@@ -157,18 +171,18 @@ rte_eal_prase_dispatch(FILE *f, char* root)
 }
 
 static int
-rte_eal_prase_physical_nic(FILE *f, char* root) 
+rte_eal_prase_physical_port(FILE *f, char* root) 
 {
-    #define PYHSICAL_NIC_INDEX "Physical nic index"
-    #define RX_QUEUE_NUM "Rx queue num"
-    #define TX_QUEUE_NUM "Tx queue num"
+    #define PHY_PORT_ID 		"PhysicalPortID"
+    #define RX_QUEUE_NUM 		"RxQueueNum"
+    #define TX_QUEUE_NUM 		"TxQueueNum"
     
     char *data;
     char *end;
 	char *buf_ptr;
 	char buf[BUFSIZ];
 	int index;
-	struct rte_phy_nic_config *phy_nic_conf = NULL;
+	struct rte_phy_port_config *phy_port_conf = NULL;
 	
 	if ((data = strchr(root, CONFIG_SPLIT)) == NULL) {
 		RTE_LOG(ERR, EAL, "%s(): cannot prase dispatch count: %s\n",
@@ -189,6 +203,10 @@ rte_eal_prase_physical_nic(FILE *f, char* root)
 	    while(isspace(buf_ptr))
 		    ++buf_ptr;
 
+		/* 必须保证每个配置项都有换行 */
+		if (*buf = '\r' || *buf = '\n')
+			break;
+
         /* 忽略注释 */  
 		if (*buf_ptr == '#')
 			continue;
@@ -200,24 +218,24 @@ rte_eal_prase_physical_nic(FILE *f, char* root)
 		}
 		while(isspace(++data));
 		
-	    if (strstr(buf_ptr, PYHSICAL_NIC_INDEX)) {
+	    if (strstr(buf_ptr, PHY_PORT_ID)) {
 		    index = strtoul(data, NULL, 0);
-		    if (index > rte_prase_config.rte_phy_nic_count) {
+		    if (index > rte_prase_config.rte_phy_port_count) {
 		    	RTE_LOG(ERR, EAL, "%s(): parse dispatch index %d\n",
 					__func__, index);
 				return -1;
 		    }
-		    phy_nic_conf = rte_prase_config.phy_nic + index;
+		    phy_port_conf = rte_prase_config.phy_port + index;
 		    continue;
 	    }
 
 	    if (strstr(buf_ptr, RX_QUEUE_NUM)) {
-		    phy_nic_conf->rx_queue_num = strtoul(data, NULL, 0);
+		    phy_port_conf->rx_queue_num = strtoul(data, NULL, 0);
 		    continue;
 	    }
 
 	    if (strstr(buf_ptr, TX_QUEUE_NUM)) {
-		    phy_nic_conf->tx_queue_num = strtoul(data, NULL, 0);
+		    phy_port_conf->tx_queue_num = strtoul(data, NULL, 0);
 		    continue;
 	    }
 	}	
@@ -288,27 +306,24 @@ rte_eal_prase_config_file(void)
 				__func__, buf_ptr);
 			fclose(f);
 		    return -1;
-	    }
-
-	    if (strstr(buf_ptr, CONFIG_PHYSICAL_NIC) &&
-		    rte_eal_prase_physical_nic(f, buf_ptr)) {
-		    RTE_LOG(ERR, EAL, "%s(): cannot prase pyhsical nic config: %s\n",
+	    } else if (strstr(buf_ptr, CONFIG_PHY_PORT) &&
+		    rte_eal_prase_physical_port(f, buf_ptr)) {
+		    RTE_LOG(ERR, EAL, "%s(): cannot prase pyhsical port config: %s\n",
 				__func__, buf_ptr);
 			fclose(f);
 		    return -1;
-	    }
-
-	    if (strstr(buf_ptr, CONFIG_APP_MAIN) &&
+	    } else if (strstr(buf_ptr, CONFIG_APP_MAIN) &&
 	        rte_eal_prase_app_main(f, buf_ptr)) {
 		    RTE_LOG(ERR, EAL, "%s(): cannot prase app main config: %s\n",
 				__func__, buf_ptr);
 			fclose(f);
 		    return -1;
-	    }
+	    } else {
+			RTE_LOG(ERR, EAL, "%s(): cannot prase config: %s\n", __func__, buf_ptr);
+			return -1;
+		}
     }
 
 	return 0;	
 }
-
-
 

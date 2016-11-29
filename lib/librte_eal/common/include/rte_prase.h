@@ -36,8 +36,8 @@
  * Holds the structures for the eal prase configuration
  */
 
-#ifndef EAL_PRASE_H
-#define EAL_PRASE_H
+#ifndef RTE_PRASE_H
+#define RTE_PRASE_H
 
 struct rte_dispatcher_config {
 	uint8_t affinity_core;
@@ -45,7 +45,7 @@ struct rte_dispatcher_config {
 	uint8_t phy_port[RTE_MAX_ETHPORTS];
 };
 
-struct rte_phy_nic_config {
+struct rte_phy_port_config {
 	//struct rte_pci_addr pci_addr;
 	uint8_t rx_queue_num;
 	uint8_t tx_queue_num;
@@ -70,8 +70,8 @@ struct rte_prase_config {
     struct rte_dispatcher_config dispatcher[RTE_MAX_DISPATCHERS];
 
 	/* 物理端口配置信息，初始化端口属性 */
-	uint8_t rte_phy_nic_count;
-	struct rte_phy_nic_config phy_nic[RTE_MAX_ETHPORTS];
+	uint8_t rte_phy_port_count;
+	struct rte_phy_port_config phy_port[RTE_MAX_ETHPORTS];
 
     /* 确定kni是否需要在此处配置，确认虚拟网卡是否有用 */
 	//uint8_t rte_kni_count;
@@ -82,5 +82,8 @@ struct rte_prase_config {
  * 解析配置文件，存储到rte_global_config中
  */
 int rte_eal_prase_config_file(void);
-	
-#endif /* EAL_PRASE_H */
+
+struct rte_prase_config *rte_eal_get_prase_config(void);
+
+
+#endif /* RTE_PRASE_H */
