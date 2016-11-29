@@ -895,11 +895,10 @@ rte_eal_init(int argc, char **argv)
 
 /* Launch threads, called at application init(). */
 int
-rte_eal_init_custom(int argc, char **argv)
+rte_eal_init_custom(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 {
-	int ret;
+	//int ret;
 	static rte_atomic32_t run_once = RTE_ATOMIC32_INIT(0);
-	char cpuset[RTE_CPU_AFFINITY_STR_LEN];
 
 	/* checks if the machine is adequate */
 	rte_cpu_check_supported();

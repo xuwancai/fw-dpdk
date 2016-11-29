@@ -67,13 +67,13 @@ struct rte_prase_config rte_prase_config;
 #define CONFIG_PHYSICAL_NIC   "Physical nic"
 #define CONFIG_APP_MAIN       "App_Main"
 
-static int
-rte_prase_strsplit(char* buf, char split, uint8* store)
+static uint8_t
+rte_prase_strsplit(char* buf, char split, uint8_t* store)
 {
-	uint8 num = 0;
-	uint8 data = 0;
+	uint8_t num = 0;
+	uint8_t data = 0;
 
-	while (*buf != NULL) {
+	while (*buf != '\0') {
        if (*buf == split) {
           *(store + num++) = data;
           data = 0;
@@ -96,11 +96,12 @@ rte_eal_prase_dispatch(FILE *f, char* root)
     
     char *data;
     char *end;
+	char *buf_ptr;
 	char buf[BUFSIZ];
 	int index;
 	struct rte_dispatcher_config *dispatcher_conf = NULL;
 	
-	if (data = strchr(root, CONFIG_SPLIT)) {
+	if ((data = strchr(root, CONFIG_SPLIT)) == NULL) {
 		RTE_LOG(ERR, EAL, "%s(): cannot prase dispatch count: %s\n",
 			__func__, root);
 		return -1;
@@ -115,21 +116,22 @@ rte_eal_prase_dispatch(FILE *f, char* root)
 	}
 	
 	while (fgets(buf, sizeof(buf), f) != NULL) {
-	    while(isspace(buf))
-		    buf++;
+		buf_ptr = buf;
+	    while(isspace(buf_ptr))
+			++buf_ptr;
 
         /* ºöÂÔ×¢ÊÍ */  
-		if (*buf == '#')
+		if (*buf_ptr == '#')
 			continue;
 			
-		if (data = strchr(buf, CONFIG_SPLIT)) {
+		if ((data = strchr(buf_ptr, CONFIG_SPLIT)) == NULL) {
 			RTE_LOG(ERR, EAL, "%s(): cannot prase dispatch item: %s\n",
-				__func__, buf);
+				__func__, buf_ptr);
 			return -1;
 		}
 		while(isspace(++data));
 
-	    if (strstr(buf, DISPATCHER_INDEX)) {
+	    if (strstr(buf_ptr, DISPATCHER_INDEX)) {
 		    index = strtoul(data, NULL, 0);
 		    if (index > rte_prase_config.rte_dispatcher_count) {
 		    	RTE_LOG(ERR, EAL, "%s(): parse dispatch index %d\n",
@@ -140,12 +142,12 @@ rte_eal_prase_dispatch(FILE *f, char* root)
 		    continue;
 	    }
 
-	    if (strstr(buf, DISPATCHER_CORE)) {
+	    if (strstr(buf_ptr, DISPATCHER_CORE)) {
 		    dispatcher_conf->affinity_core = strtoul(data, NULL, 0);
 		    continue;
 	    }
 
-	    if (strstr(buf, DISPATCHER_PORT)) {
+	    if (strstr(buf_ptr, DISPATCHER_PORT)) {
 		    dispatcher_conf->phy_port_count = rte_prase_strsplit(data, ',', dispatcher_conf->phy_port);
 		    continue;
 	    }
@@ -163,11 +165,12 @@ rte_eal_prase_physical_nic(FILE *f, char* root)
     
     char *data;
     char *end;
+	char *buf_ptr;
 	char buf[BUFSIZ];
 	int index;
 	struct rte_phy_nic_config *phy_nic_conf = NULL;
 	
-	if (data = strchr(root, CONFIG_SPLIT)) {
+	if ((data = strchr(root, CONFIG_SPLIT)) == NULL) {
 		RTE_LOG(ERR, EAL, "%s(): cannot prase dispatch count: %s\n",
 			__func__, root);
 		return -1;
@@ -182,21 +185,22 @@ rte_eal_prase_physical_nic(FILE *f, char* root)
 	}
 	
 	while (fgets(buf, sizeof(buf), f) != NULL) {
-	    while(isspace(buf))
-		    buf++;
+		buf_ptr = buf;
+	    while(isspace(buf_ptr))
+		    ++buf_ptr;
 
         /* ºöÂÔ×¢ÊÍ */  
-		if (*buf == '#')
+		if (*buf_ptr == '#')
 			continue;
 			
-		if (data = strchr(buf, CONFIG_SPLIT)) {
+		if ((data = strchr(buf_ptr, CONFIG_SPLIT)) == NULL) {
 			RTE_LOG(ERR, EAL, "%s(): cannot prase dispatch item: %s\n",
-				__func__, buf);
+				__func__, buf_ptr);
 			return -1;
 		}
 		while(isspace(++data));
 		
-	    if (strstr(buf, PYHSICAL_NIC_INDEX)) {
+	    if (strstr(buf_ptr, PYHSICAL_NIC_INDEX)) {
 		    index = strtoul(data, NULL, 0);
 		    if (index > rte_prase_config.rte_phy_nic_count) {
 		    	RTE_LOG(ERR, EAL, "%s(): parse dispatch index %d\n",
@@ -207,12 +211,12 @@ rte_eal_prase_physical_nic(FILE *f, char* root)
 		    continue;
 	    }
 
-	    if (strstr(buf, RX_QUEUE_NUM)) {
+	    if (strstr(buf_ptr, RX_QUEUE_NUM)) {
 		    phy_nic_conf->rx_queue_num = strtoul(data, NULL, 0);
 		    continue;
 	    }
 
-	    if (strstr(buf, TX_QUEUE_NUM)) {
+	    if (strstr(buf_ptr, TX_QUEUE_NUM)) {
 		    phy_nic_conf->tx_queue_num = strtoul(data, NULL, 0);
 		    continue;
 	    }
@@ -222,13 +226,12 @@ rte_eal_prase_physical_nic(FILE *f, char* root)
 }
 
 static int
-rte_eal_prase_app_main(FILE *f, char* root) 
+rte_eal_prase_app_main(__attribute__((unused)) FILE *f, char* root) 
 { 
     char *data;
     char *end;
-	int index;
 	
-	if (data = strchr(root, CONFIG_SPLIT)) {
+	if ((data = strchr(root, CONFIG_SPLIT)) == NULL) {
 		RTE_LOG(ERR, EAL, "%s(): cannot prase dispatch count: %s\n",
 			__func__, root);
 		return -1;
@@ -249,6 +252,7 @@ int
 rte_eal_prase_config_file(void)
 {
 	FILE *f;
+	char *buf_ptr;
 	char buf[BUFSIZ];
 	
 	if (access(CONFIG_FILE, F_OK)) {
@@ -264,39 +268,40 @@ rte_eal_prase_config_file(void)
 	}
 
     while (fgets(buf, sizeof(buf), f) != NULL) {
-	    while(isspace(buf))
-		    buf++;
+		buf_ptr = buf;
+	    while(isspace(buf_ptr))
+		    ++buf_ptr;
 
         /* ºöÂÔ×¢ÊÍ */  
-		if (*buf == '#')
+		if (*buf_ptr == '#')
 			continue;
 
         /* ´íÎóµÄÅäÖÃ */ 
-        if (strstr(buf, CONFIG_COUNT_SPLIT) == NULL)
+        if (strstr(buf_ptr, CONFIG_COUNT_SPLIT) == NULL)
 	        RTE_LOG(ERR, EAL, "%s(): cannot prase config: %s\n",
-				__func__, buf);
+				__func__, buf_ptr);
 	        continue;
 
-	    if (strstr(buf, CONFIG_DISPATCHER) &&
-		    rte_eal_prase_dispatch(f, buf)) {
+	    if (strstr(buf_ptr, CONFIG_DISPATCHER) &&
+		    rte_eal_prase_dispatch(f, buf_ptr)) {
 			RTE_LOG(ERR, EAL, "%s(): cannot prase dispatch config: %s\n",
-				__func__, buf);
+				__func__, buf_ptr);
 			fclose(f);
 		    return -1;
 	    }
 
-	    if (strstr(buf, CONFIG_PHYSICAL_NIC) &&
-		    rte_eal_prase_physical_nic(f, buf)) {
+	    if (strstr(buf_ptr, CONFIG_PHYSICAL_NIC) &&
+		    rte_eal_prase_physical_nic(f, buf_ptr)) {
 		    RTE_LOG(ERR, EAL, "%s(): cannot prase pyhsical nic config: %s\n",
-				__func__, buf);
+				__func__, buf_ptr);
 			fclose(f);
 		    return -1;
 	    }
 
-	    if (strstr(buf, CONFIG_APP_MAIN) &&
-	        rte_eal_prase_app_main(f, buf)) {
+	    if (strstr(buf_ptr, CONFIG_APP_MAIN) &&
+	        rte_eal_prase_app_main(f, buf_ptr)) {
 		    RTE_LOG(ERR, EAL, "%s(): cannot prase app main config: %s\n",
-				__func__, buf);
+				__func__, buf_ptr);
 			fclose(f);
 		    return -1;
 	    }
