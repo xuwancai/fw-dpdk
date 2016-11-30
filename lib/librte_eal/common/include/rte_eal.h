@@ -100,6 +100,7 @@ struct rte_config {
  */
 struct rte_config *rte_eal_get_configuration(void);
 
+
 /**
  * Get a lcore's role.
  *
@@ -157,7 +158,7 @@ int rte_eal_iopl_init(void);
  *   - On failure, a negative error value.
  */
 int rte_eal_init(int argc, char **argv);
-int rte_eal_init_custom(int argc, char **argv);
+int rte_eal_init_custom(int master_lcore);
 
 /**
  * Check if a primary process is currently alive
@@ -229,6 +230,8 @@ rte_set_application_usage_hook(rte_usage_hook_t usage_func);
  *   Nonzero if hugepages are enabled.
  */
 int rte_eal_has_hugepages(void);
+
+void rte_thread_init_slave(unsigned lcore_id);
 
 /**
  * A wrap API for syscall gettid.

@@ -895,7 +895,7 @@ rte_eal_init(int argc, char **argv)
 
 /* Launch threads, called at application init(). */
 int
-rte_eal_init_custom(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
+rte_eal_init_custom(int master_lcore)
 {
 	//int ret;
 	static rte_atomic32_t run_once = RTE_ATOMIC32_INIT(0);
@@ -918,11 +918,13 @@ rte_eal_init_custom(__attribute__((unused)) int argc, __attribute__((unused)) ch
 	/* cpu信息的检测，解析配置文件使用此信息 */
 	if (rte_eal_cpu_init() < 0)
 		rte_panic("Cannot detect lcores\n");
-	
+
+	#if 0
     /* 增加解析配置文件的函数 */
 	if (rte_eal_prase_config_file() < 0)
-		rte_panic("Cannot prase config file\n");
-
+	 	rte_panic("Cannot prase config file\n");
+    #endif
+    
     /* hugepage内存的映射，简化版，不在判断是否支为xem、nohuge等 */
 	if (eal_hugepage_info_init() < 0)
 		rte_panic("Cannot get hugepage information\n");
@@ -970,15 +972,10 @@ rte_eal_init_custom(__attribute__((unused)) int argc, __attribute__((unused)) ch
 	/* dlopen so，暂且先打开 */
 	if (eal_plugins_init() < 0)
 		rte_panic("Cannot init plugins\n");
-#if 0
-	eal_thread_init_master(rte_config.master_lcore);
-	ret = eal_thread_dump_affinity(cpuset, RTE_CPU_AFFINITY_STR_LEN);
 
-	RTE_LOG(DEBUG, EAL, "Master lcore %u is ready (tid=%x;cpuset=[%s%s])\n",
-		rte_config.master_lcore, (int)thread_id, cpuset,
-		ret == 0 ? "" : "...");
-#endif
-
+	rte_config.master_lcore = master_lcore;
+	eal_thread_init_master(master_lcore);
+	
 	if (rte_eal_dev_init() < 0)
 		rte_panic("Cannot init pmd devices\n");
 

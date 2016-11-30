@@ -176,5 +176,7 @@ DPDK_16.11 {
 	rte_eal_dev_detach;
 	rte_eal_vdrv_register;
 	rte_eal_vdrv_unregister;
+    rte_eal_init_custom;
+    rte_thread_init_slave;
 
 } DPDK_16.07;
