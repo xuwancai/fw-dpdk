@@ -76,6 +76,7 @@
 #include <rte_version.h>
 #include <rte_atomic.h>
 #include <malloc_heap.h>
+#include <rte_prase.h>
 
 #include "eal_private.h"
 #include "eal_thread.h"
@@ -84,7 +85,6 @@
 #include "eal_hugepages.h"
 #include "eal_options.h"
 #include "eal_vfio.h"
-#include "eal_prase.h"
 
 #define MEMSIZE_IF_NO_HUGE_PAGE (64ULL * 1024ULL * 1024ULL)
 

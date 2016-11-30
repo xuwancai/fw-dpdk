@@ -130,7 +130,7 @@ rte_eal_prase_dispatch(FILE *f, char* root)
 			++buf_ptr;
 
 		/* 必须保证每个配置项都有换行 */
-		if (*buf = '\r' || *buf = '\n')
+		if (*buf == '\r' || *buf == '\n')
 			break;
 		
 
@@ -190,9 +190,9 @@ rte_eal_prase_physical_port(FILE *f, char* root)
 		return -1;
 	}
 	
-	rte_prase_config.rte_phy_nic_count = strtoul(++data, &end, 0);
+	rte_prase_config.rte_phy_port_count = strtoul(++data, &end, 0);
 	if ((data[0] == '\0') || (end == NULL) || (*end != '\n') || 
-		rte_prase_config.rte_phy_nic_count > RTE_MAX_ETHPORTS) {
+		rte_prase_config.rte_phy_port_count > RTE_MAX_ETHPORTS) {
 		RTE_LOG(ERR, EAL, "%s(): cannot parse phy nic count value %s\n",
 				__func__, data);
 		return -1;
@@ -204,7 +204,7 @@ rte_eal_prase_physical_port(FILE *f, char* root)
 		    ++buf_ptr;
 
 		/* 必须保证每个配置项都有换行 */
-		if (*buf = '\r' || *buf = '\n')
+		if (*buf == '\r' || *buf == '\n')
 			break;
 
         /* 忽略注释 */  
@@ -256,8 +256,7 @@ rte_eal_prase_app_main(__attribute__((unused)) FILE *f, char* root)
 	}
 	
 	rte_prase_config.rte_appmain_count = strtoul(++data, &end, 0);
-	if ((data[0] == '\0') || (end == NULL) || (*end != '\n') || 
-		rte_prase_config.rte_phy_nic_count > RTE_MAX_ETHPORTS) {
+	if ((data[0] == '\0') || (end == NULL) || (*end != '\n')) {
 		RTE_LOG(ERR, EAL, "%s(): cannot parse appmain count value %s\n",
 				__func__, data);
 		return -1;
